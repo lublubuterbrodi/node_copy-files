@@ -4,26 +4,13 @@
 const fs = require('fs');
 const path = require('path');
 
-function fail(message) {
-  console.error(message);
-  process.exit(1);
-}
-
-function ensureNode20Plus() {
-  const major = Number(process.versions.node.split('.')[0]);
-
-  if (!Number.isFinite(major) || major < 20) {
-    fail(`Node.js >= 20 is required. Current: ${process.versions.node}`);
-  }
-}
-
 function main() {
-  ensureNode20Plus();
-
   const args = process.argv.slice(2);
 
   if (args.length !== 2) {
-    fail('Exactly two arguments required: <source> <destination>');
+    console.error('Two arguments required: source and destination');
+
+    return;
   }
 
   const [source, destination] = args;
@@ -35,22 +22,38 @@ function main() {
     return;
   }
 
-  let stat;
+  let sourceStat;
 
   try {
-    stat = fs.statSync(sourcePath);
+    sourceStat = fs.statSync(sourcePath);
   } catch (e) {
-    fail(`Source does not exist or is not accessible: ${sourcePath}`);
+    console.error('Source file does not exist');
+
+    return;
   }
 
-  if (!stat.isFile()) {
-    fail('Source must be a file');
+  if (!sourceStat.isFile()) {
+    console.error('Source must be a file');
+
+    return;
+  }
+
+  try {
+    const destStat = fs.statSync(destinationPath);
+
+    if (destStat.isDirectory()) {
+      console.error('Destination must be a file');
+
+      return;
+    }
+  } catch (e) {
+    // Destination file does not exist, which is fine
   }
 
   try {
     fs.copyFileSync(sourcePath, destinationPath);
   } catch (error) {
-    fail(error.message);
+    console.error(error.message);
   }
 }
 
