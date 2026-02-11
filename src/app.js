@@ -4,17 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 
-function main() {
-  const args = process.argv.slice(2);
-
-  if (args.length !== 2) {
-    console.error('Two arguments required: source and destination');
-
-    return;
-  }
-
-  const [source, destination] = args;
-
+function copyFileCli(source, destination) {
   const sourcePath = path.resolve(source);
   const destinationPath = path.resolve(destination);
 
@@ -27,34 +17,30 @@ function main() {
   try {
     sourceStat = fs.statSync(sourcePath);
   } catch (e) {
-    console.error('Source file does not exist');
-
-    return;
+    throw new Error('Source file does not exist');
   }
 
   if (!sourceStat.isFile()) {
-    console.error('Source must be a file');
-
-    return;
+    throw new Error('Source must be a file');
   }
 
   try {
     const destStat = fs.statSync(destinationPath);
 
     if (destStat.isDirectory()) {
-      console.error('Destination must be a file');
-
-      return;
+      throw new Error('Destination must be a file');
     }
   } catch (e) {
-    // Destination file does not exist, which is fine
+    if (e && e.message === 'Destination must be a file') {
+      throw e;
+    }
   }
 
   try {
     fs.copyFileSync(sourcePath, destinationPath);
   } catch (error) {
-    console.error(error.message);
+    throw new Error(error && error.message ? error.message : 'Copy failed');
   }
 }
 
-main();
+module.exports = { copyFileCli };
